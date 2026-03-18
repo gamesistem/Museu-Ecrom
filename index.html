@@ -788,7 +788,7 @@ const REPO = 'gamesistem/Museu-Ecrom';
 const API = `https://api.github.com/repos/${REPO}/releases?per_page=100`;
 const RELEASE_BASE = `https://github.com/${REPO}/releases/tag/`;
 
-let allReleases = [];
+let allReleases =[];
 let currentFilter = 'all';
 let currentSort = 'newest';
 
@@ -819,7 +819,22 @@ function setLoadingText(t) {
 async function fetchReleases() {
   try {
     setLoadingText('ACESSANDO ARQUIVO NEXUS...');
-    const pages = [];
+    
+    // --- NOVO: Obtendo a tag latest do arquivo release.txt ---
+    let txtLatestTag = '';
+    try {
+      const txtRes = await fetch('https://gamesistem.github.io/Museu-Ecrom/release.txt');
+      if (txtRes.ok) {
+        const txtData = await txtRes.text();
+        // Divide o arquivo por quebras de linha e pega a primeira linha, removendo espaços
+        txtLatestTag = txtData.split('\n')[0].trim();
+      }
+    } catch (txtErr) {
+      console.warn('Não foi possível carregar o arquivo release.txt', txtErr);
+    }
+    // ---------------------------------------------------------
+
+    const pages =[];
     let page = 1;
     while (true) {
       const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100&page=${page}`);
@@ -830,6 +845,7 @@ async function fetchReleases() {
       if (data.length < 100) break;
       page++;
     }
+
     setLoadingText('PROCESSANDO REGISTROS...');
     allReleases = pages.map(r => ({
       id: r.id,
@@ -839,18 +855,27 @@ async function fetchReleases() {
       status: detectStatus(r.body),
       date: r.published_at,
       url: r.html_url,
-      assets: r.assets || [],
-      latest: r.prerelease === false && page === 1
+      assets: r.assets ||[],
+      // Define como latest caso a tag do release do github seja igual a lida no txt
+      isLatest: txtLatestTag ? (r.tag_name === txtLatestTag) : false
     }));
-    // Mark first as latest
-    if (allReleases.length > 0) allReleases[0].isLatest = true;
+    
+    // Fallback: caso a requisição do release.txt falhe por algum motivo
+    // e nós não tenhamos marcado nenhum como latest, marcamos o primeiro
+    if (!txtLatestTag && allReleases.length > 0) {
+      allReleases[0].isLatest = true;
+    }
+
     updateStats();
     renderReleases();
+    
     setTimeout(() => {
       document.getElementById('loading-screen').classList.add('hidden');
     }, 600);
+    
     document.getElementById('status-text').textContent =
       `${allReleases.length} VERSÕES CARREGADAS · ARQUIVO SINCRONIZADO`;
+      
   } catch (e) {
     document.getElementById('loading-screen').classList.add('hidden');
     document.getElementById('error-msg').classList.add('visible');

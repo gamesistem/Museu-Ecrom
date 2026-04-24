@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Museu Ecrom Web Launcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8d08a;
+    --gold-dark: #8a6f28;
+    --marble: #f5f0e8;
+    --marble-dark: #e8e0d0;
+    --marble-shadow: #d4c9b5;
+    --aegean: #1a3a5c;
+    --aegean-light: #2a5a8c;
+    --aegean-pale: #e8f0f8;
+    --terra: #8b3a1e;
+    --terra-light: #c85a2a;
+    --ink: #1a1510;
+    --ink-muted: #4a3f32;
+    --ivory: #faf6ef;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--aegean);
+    font-family: 'IM Fell English', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, #2a5070 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, #0d2035 0%, transparent 50%);
+  }
+
+  .meander-top, .meander-bottom {
+    width: 100%;
+    height: 18px;
+    background-color: var(--gold);
+    position: relative;
+    overflow: hidden;
+  }
+  .meander-top::before, .meander-bottom::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent 0px, transparent 6px,
+      var(--gold-dark) 6px, var(--gold-dark) 9px,
+      transparent 9px, transparent 12px
+    ), repeating-linear-gradient(
+      0deg,
+      transparent 0px, transparent 6px,
+      var(--gold-dark) 6px, var(--gold-dark) 9px,
+      transparent 9px, transparent 12px
+    );
+    opacity: 0.5;
+  }
+
+  header {
+    background: linear-gradient(180deg, #0d1f30 0%, #1a3a5c 100%);
+    border-bottom: 3px solid var(--gold);
+    position: relative;
+    padding: 0 2rem;
+  }
+
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .temple-symbol {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .col-cap {
+    width: 20px; height: 5px;
+    background: var(--gold);
+    border-radius: 1px;
+  }
+
+  .col-shaft {
+    width: 8px; height: 40px;
+    background: linear-gradient(90deg, var(--gold-dark) 0%, var(--gold-light) 40%, var(--gold-dark) 100%);
+    border-radius: 1px;
+  }
+
+  .col-base {
+    width: 22px; height: 4px;
+    background: var(--gold);
+    border-radius: 1px;
+  }
+
+  .col-shaft.tall { height: 55px; }
+  .col-cap.wide { width: 26px; }
+  .col-shaft.wide { width: 10px; }
+  .col-base.wide { width: 28px; }
+
+  .pediment {
+    position: absolute;
+    top: 1.2rem;
+    width: 130px;
+    height: 25px;
+    border-left: 3px solid var(--gold);
+    border-right: 3px solid var(--gold);
+    border-bottom: 3px solid var(--gold);
+    clip-path: polygon(0 100%, 50% 0%, 100% 100%);
+    background: linear-gradient(180deg, #c9a84c22 0%, #c9a84c44 100%);
+  }
+
+  .site-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(1.1rem, 3vw, 1.8rem);
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 30px rgba(201,168,76,0.4), 0 2px 4px rgba(0,0,0,0.6);
+    line-height: 1.2;
+  }
+
+  .site-subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--marble-shadow);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+  }
+
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  .drop-area {
+    position: relative;
+    border: 2px dashed var(--gold-dark);
+    border-radius: 4px;
+    background: linear-gradient(145deg, #0d1f3044 0%, #1a3a5c22 100%);
+    padding: 3.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    overflow: hidden;
+  }
+
+  .drop-area::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid var(--gold-dark);
+    opacity: 0.3;
+    pointer-events: none;
+    border-radius: 2px;
+  }
+
+  .drop-area:hover, .drop-area.dragover {
+    border-color: var(--gold);
+    background: linear-gradient(145deg, #1a3a5c66 0%, #2a5a8c22 100%);
+    box-shadow: 0 0 40px rgba(201,168,76,0.15), inset 0 0 40px rgba(201,168,76,0.05);
+  }
+
+  .drop-area.dragover { border-style: solid; }
+
+  .drop-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+    filter: drop-shadow(0 0 8px rgba(201,168,76,0.5));
+  }
+
+  .drop-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.15rem;
+    color: var(--gold-light);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.6rem;
+  }
+
+  .drop-desc {
+    font-size: 0.9rem;
+    color: var(--marble-shadow);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  .drop-desc strong {
+    color: var(--gold);
+    font-style: normal;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+  }
+
+  .drop-btn {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: 0.65rem 2rem;
+    background: transparent;
+    border: 1.5px solid var(--gold);
+    color: var(--gold-light);
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .drop-btn:hover {
+    background: var(--gold);
+    color: var(--ink);
+    box-shadow: 0 0 20px rgba(201,168,76,0.3);
+  }
+
+  #file-input { display: none; }
+
+  .status-bar {
+    margin-top: 1.5rem;
+    padding: 0.85rem 1.25rem;
+    border-left: 3px solid var(--gold);
+    background: rgba(201,168,76,0.07);
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    color: var(--gold-light);
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .status-bar.visible { display: flex; }
+  .status-bar.error { border-color: var(--terra-light); color: #e8836b; background: rgba(200,90,42,0.08); }
+  .status-bar.success { border-color: #5aac7c; color: #8fdcae; background: rgba(90,172,124,0.08); }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .status-bar.success .status-dot,
+  .status-bar.error .status-dot { animation: none; }
+
+  .file-list {
+    margin-top: 1.5rem;
+    display: none;
+  }
+  .file-list.visible { display: block; }
+
+  .file-list-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--marble-shadow);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: rgba(245,240,232,0.04);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .file-item:hover {
+    background: rgba(201,168,76,0.1);
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  .file-item.active {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+  }
+
+  .file-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.82rem;
+    color: var(--gold-light);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-open-btn {
+    flex-shrink: 0;
+    padding: 0.3rem 0.9rem;
+    border: 1px solid var(--gold-dark);
+    background: transparent;
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .file-open-btn:hover {
+    background: var(--gold);
+    color: var(--ink);
+  }
+
+  .viewer-wrapper {
+    display: none;
+    margin-top: 2rem;
+    position: relative;
+  }
+  .viewer-wrapper.visible { display: block; }
+
+  .viewer-header {
+    background: linear-gradient(90deg, #0d1f30 0%, #1a3a5c 100%);
+    border: 1px solid var(--gold-dark);
+    border-bottom: none;
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .viewer-filename {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .viewer-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .viewer-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--gold-dark);
+    background: transparent;
+    color: var(--gold-light);
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .viewer-btn:hover { background: var(--gold); color: var(--ink); }
+  .viewer-btn.close-btn:hover { background: var(--terra-light); border-color: var(--terra-light); }
+
+  .viewer-frame-container {
+    border: 1px solid var(--gold-dark);
+    background: #fff;
+    position: relative;
+  }
+
+  #viewer-frame {
+    width: 100%;
+    height: 70vh;
+    border: none;
+    display: block;
+  }
+
+  .ornament {
+    text-align: center;
+    color: var(--gold-dark);
+    font-size: 1.4rem;
+    letter-spacing: 0.5em;
+    padding: 1.5rem 0;
+    opacity: 0.6;
+  }
+
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dark), var(--gold), var(--gold-dark), transparent);
+    margin: 2rem 0;
+    opacity: 0.4;
+  }
+
+  footer {
+    background: linear-gradient(0deg, #080f18 0%, #0d1f30 100%);
+    border-top: 3px solid var(--gold-dark);
+    padding: 1.2rem 2rem;
+    text-align: center;
+  }
+
+  .footer-text {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--gold-dark);
+    text-transform: uppercase;
+  }
+
+  .corner-deco {
+    position: fixed;
+    width: 60px; height: 60px;
+    pointer-events: none;
+    opacity: 0.25;
+  }
+  .corner-deco.tl { top: 20px; left: 20px; }
+  .corner-deco.tr { top: 20px; right: 20px; transform: scaleX(-1); }
+  .corner-deco.bl { bottom: 20px; left: 20px; transform: scaleY(-1); }
+  .corner-deco.br { bottom: 20px; right: 20px; transform: scale(-1); }
+
+  .loading-ring {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(201,168,76,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  .loading-ring.visible { display: block; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    .site-title { font-size: 1rem; }
+    main { padding: 1.5rem 1rem 3rem; }
+    #viewer-frame { height: 50vh; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="corner-deco tl" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M5 5 L5 55 M5 5 L55 5" stroke="#c9a84c" stroke-width="2"/>
+  <path d="M5 15 L15 15 L15 5" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+  <path d="M5 30 L20 30 L20 15" stroke="#c9a84c" stroke-width="1" fill="none" opacity="0.6"/>
+</svg>
+<svg class="corner-deco tr" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M5 5 L5 55 M5 5 L55 5" stroke="#c9a84c" stroke-width="2"/>
+  <path d="M5 15 L15 15 L15 5" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+  <path d="M5 30 L20 30 L20 15" stroke="#c9a84c" stroke-width="1" fill="none" opacity="0.6"/>
+</svg>
+<svg class="corner-deco bl" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M5 5 L5 55 M5 5 L55 5" stroke="#c9a84c" stroke-width="2"/>
+  <path d="M5 15 L15 15 L15 5" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+  <path d="M5 30 L20 30 L20 15" stroke="#c9a84c" stroke-width="1" fill="none" opacity="0.6"/>
+</svg>
+<svg class="corner-deco br" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M5 5 L5 55 M5 5 L55 5" stroke="#c9a84c" stroke-width="2"/>
+  <path d="M5 15 L15 15 L15 5" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+  <path d="M5 30 L20 30 L20 15" stroke="#c9a84c" stroke-width="1" fill="none" opacity="0.6"/>
+</svg>
+
+<div class="meander-top"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="temple-symbol">
+      <div class="column">
+        <div class="col-cap"></div>
+        <div class="col-shaft"></div>
+        <div class="col-base"></div>
+      </div>
+      <div class="column" style="margin-bottom:4px">
+        <div class="col-cap wide"></div>
+        <div class="col-shaft wide tall"></div>
+        <div class="col-base wide"></div>
+      </div>
+      <div style="font-family:'Cinzel Decorative',serif;font-size:2.2rem;color:var(--gold);line-height:1;padding:0 0.5rem;text-shadow:0 0 20px rgba(201,168,76,0.6);align-self:flex-end;margin-bottom:4px;">Ω</div>
+      <div class="column" style="margin-bottom:4px">
+        <div class="col-cap wide"></div>
+        <div class="col-shaft wide tall"></div>
+        <div class="col-base wide"></div>
+      </div>
+      <div class="column">
+        <div class="col-cap"></div>
+        <div class="col-shaft"></div>
+        <div class="col-base"></div>
+      </div>
+    </div>
+
+    <h1 class="site-title">Museu Ecrom Web Launcher</h1>
+    <p class="site-subtitle">Executor de Instâncias &nbsp;·&nbsp; ΜΕΩ &nbsp;·&nbsp; Web Edition</p>
+  </div>
+</header>
+
+<main>
+
+  <div class="ornament">— ✦ —</div>
+
+  <div class="drop-area" id="drop-area">
+    <span class="drop-icon">🏛️</span>
+    <p class="drop-title">Deposite sua Instância</p>
+    <p class="drop-desc">
+      Arraste e solte um arquivo <strong>.meinstance</strong> aqui<br>
+      ou clique para selecionar do seu sistema de arquivos
+    </p>
+    <button class="drop-btn" id="select-btn">Selecionar Arquivo</button>
+    <input type="file" id="file-input" accept=".meinstance,.zip">
+  </div>
+
+  <div class="status-bar" id="status-bar">
+    <div class="loading-ring" id="loading-ring"></div>
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Lendo arquivo…</span>
+  </div>
+
+  <div class="file-list" id="file-list">
+    <p class="file-list-title">Documentos encontrados na instância</p>
+    <div id="file-items"></div>
+  </div>
+
+  <div class="divider" id="viewer-divider" style="display:none"></div>
+
+  <div class="viewer-wrapper" id="viewer-wrapper">
+    <div class="viewer-header">
+      <span class="viewer-filename" id="viewer-filename">—</span>
+      <div class="viewer-controls">
+        <button class="viewer-btn close-btn" id="btn-close">✕ Fechar</button>
+      </div>
+    </div>
+    <div class="viewer-frame-container">
+      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"></iframe>
+    </div>
+  </div>
+
+  <div class="ornament" style="margin-top:2rem;">— ✦ —</div>
+
+</main>
+
+<div class="meander-bottom"></div>
+
+<footer>
+  <p class="footer-text">Museu Ecrom &nbsp;·&nbsp; Web Launcher &nbsp;·&nbsp; Execução Local de Instâncias .meinstance</p>
+</footer>
+
+<script>
+(function() {
+  const dropArea   = document.getElementById('drop-area');
+  const fileInput  = document.getElementById('file-input');
+  const selectBtn  = document.getElementById('select-btn');
+  const statusBar  = document.getElementById('status-bar');
+  const statusText = document.getElementById('status-text');
+  const statusDot  = document.getElementById('status-dot');
+  const loadingRing= document.getElementById('loading-ring');
+  const fileList   = document.getElementById('file-list');
+  const fileItems  = document.getElementById('file-items');
+  const viewerWrap = document.getElementById('viewer-wrapper');
+  const viewerFrame= document.getElementById('viewer-frame');
+  const viewerName = document.getElementById('viewer-filename');
+  const divider    = document.getElementById('viewer-divider');
+  const btnClose   = document.getElementById('btn-close');
+
+  let currentFileName = null;
+
+  ['dragenter','dragover'].forEach(e => {
+    dropArea.addEventListener(e, ev => { ev.preventDefault(); dropArea.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(e => {
+    dropArea.addEventListener(e, ev => { ev.preventDefault(); dropArea.classList.remove('dragover'); });
+  });
+  dropArea.addEventListener('drop', ev => {
+    const file = ev.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+  dropArea.addEventListener('click', ev => {
+    if (ev.target !== selectBtn) fileInput.click();
+  });
+  selectBtn.addEventListener('click', ev => { ev.stopPropagation(); fileInput.click(); });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    fileInput.value = '';
+  });
+
+  async function handleFile(file) {
+    setStatus('loading', 'Lendo arquivo: ' + file.name + ' …');
+    clearViewer();
+    fileList.classList.remove('visible');
+    fileItems.innerHTML = '';
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(arrayBuffer);
+
+      const htmlFiles = [];
+      zip.forEach((path, entry) => {
+        if (!entry.dir && /\.html?$/i.test(path)) {
+          htmlFiles.push({ path, entry });
+        }
+      });
+
+      if (htmlFiles.length === 0) {
+        setStatus('error', 'Nenhum arquivo HTML encontrado dentro do .meinstance.');
+        return;
+      }
+
+      setStatus('success', htmlFiles.length + ' documento(s) HTML encontrado(s) na instância.');
+
+      if (htmlFiles.length === 1) {
+        await loadHtmlEntry(htmlFiles[0].entry, htmlFiles[0].path);
+      } else {
+        fileList.classList.add('visible');
+        htmlFiles.forEach(({ path, entry }) => {
+          const item = document.createElement('div');
+          item.className = 'file-item';
+
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'file-name';
+          nameSpan.textContent = path;
+
+          const openBtn = document.createElement('button');
+          openBtn.className = 'file-open-btn';
+          openBtn.textContent = 'Abrir';
+          openBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.file-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            await loadHtmlEntry(entry, path);
+          });
+
+          item.appendChild(nameSpan);
+          item.appendChild(openBtn);
+          item.addEventListener('click', async () => {
+            document.querySelectorAll('.file-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            await loadHtmlEntry(entry, path);
+          });
+          fileItems.appendChild(item);
+        });
+      }
+
+    } catch (err) {
+      setStatus('error', 'Erro ao processar o arquivo: ' + err.message);
+      console.error(err);
+    }
+  }
+
+  async function loadHtmlEntry(entry, path) {
+    setStatus('loading', 'Carregando ' + path + ' …');
+    try {
+      const content = await entry.async('string');
+
+      viewerFrame.removeAttribute('src');
+      viewerFrame.srcdoc = content;
+      viewerName.textContent = path;
+      viewerWrap.classList.add('visible');
+      divider.style.display = 'block';
+
+      viewerFrame.onload = () => {
+        setStatus('success', path + ' carregado com sucesso.');
+      };
+
+    } catch (err) {
+      setStatus('error', 'Erro ao carregar ' + path + ': ' + err.message);
+    }
+  }
+
+  function clearViewer() {
+    viewerWrap.classList.remove('visible');
+    divider.style.display = 'none';
+    viewerFrame.removeAttribute('srcdoc');
+    viewerFrame.src = 'about:blank';
+    viewerName.textContent = '—';
+    currentFileName = null;
+  }
+
+  function setStatus(type, msg) {
+    statusBar.className = 'status-bar visible';
+    loadingRing.classList.remove('visible');
+    if (type === 'error')   { statusBar.classList.add('error'); }
+    if (type === 'success') { statusBar.classList.add('success'); }
+    if (type === 'loading') { loadingRing.classList.add('visible'); statusDot.style.display = 'none'; }
+    else { statusDot.style.display = ''; }
+    statusText.textContent = msg;
+  }
+
+  btnClose.addEventListener('click', () => {
+    clearViewer();
+    fileList.classList.remove('visible');
+    fileItems.innerHTML = '';
+    setStatus('loading', 'Instância fechada. Carregue um novo arquivo.');
+    statusBar.className = 'status-bar visible';
+    loadingRing.classList.remove('visible');
+    statusDot.style.display = '';
+  });
+
+})();
+</script>
+</body>
+</html>
